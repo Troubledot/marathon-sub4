@@ -112,6 +112,24 @@
                 max-width: 600px;
             }
 
+            .gesture-tips {
+                width: 100%;
+                max-width: 600px;
+                margin: 0 0 14px 0;
+                padding: 10px 12px;
+                border: 1px solid #2f2f2f;
+                border-radius: 10px;
+                background: rgba(255, 255, 255, 0.02);
+                color: #a9a9a9;
+                font-size: 0.82rem;
+                line-height: 1.55;
+            }
+
+            .gesture-tips b {
+                color: #cfcfcf;
+                font-weight: 600;
+            }
+
             .week-title {
                 color: var(--text-muted);
                 font-size: 0.9rem;
@@ -343,6 +361,10 @@
             <div class="progress-bar">
                 <div id="progress-fill"></div>
             </div>
+        </div>
+
+        <div class="gesture-tips">
+            <b>手势说明：</b>单击卡片标记完成；双击卡片标记跳过并填写原因；长按卡片（约 450ms）添加训练备注。
         </div>
 
         <div class="list-container" id="todo-list"></div>
