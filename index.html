@@ -1,0 +1,921 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <title>SUB4 EVOLUTION | 全马破4计划</title>
+        <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+        <style>
+            :root {
+                --bg-color: #0d0d0d;
+                --card-bg: #1a1a1a;
+                --primary: #ff4d00; /* 火焰橙 */
+                --secondary: #00e5ff; /* 赛博蓝 */
+                --success: #00ff88; /* 成功绿 */
+                --text-main: #f0f0f0;
+                --text-muted: #666666;
+                --border: #2a2a2a;
+            }
+
+            * {
+                box-sizing: border-box;
+                -webkit-tap-highlight-color: transparent;
+            }
+
+            body {
+                background-color: var(--bg-color);
+                color: var(--text-main);
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                margin: 0;
+                padding: 0 15px 40px 15px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                overflow-x: hidden;
+            }
+
+            /* 顶部标题区 */
+            .header {
+                text-align: center;
+                margin: 30px 0 20px 0;
+                width: 100%;
+                max-width: 600px;
+            }
+
+            h1 {
+                font-size: 2.2rem;
+                margin: 0;
+                background: linear-gradient(135deg, var(--primary), var(--secondary));
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                font-style: italic;
+                letter-spacing: 2px;
+            }
+
+            h2 {
+                font-size: 1rem;
+                margin: 0;
+                color: var(--primary);
+                letter-spacing: 1px;
+            }
+
+            .subtitle {
+                font-family: monospace;
+                color: var(--text-muted);
+                font-size: 0.85rem;
+                margin-top: 5px;
+            }
+
+            /* 吸顶进度条（手机端核心体验） */
+            .sticky-progress-wrapper {
+                position: sticky;
+                top: 0;
+                width: 100%;
+                background: rgba(13, 13, 13, 0.95);
+                backdrop-filter: blur(10px);
+                z-index: 100;
+                padding: 15px 0;
+                margin-bottom: 20px;
+                max-width: 600px;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .progress-label {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 8px;
+                font-family: monospace;
+                font-weight: bold;
+                font-size: 0.9rem;
+                color: var(--secondary);
+            }
+
+            .progress-bar {
+                height: 10px;
+                background: #222;
+                border-radius: 5px;
+                overflow: hidden;
+                box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+            }
+
+            #progress-fill {
+                height: 100%;
+                width: 0%;
+                background: linear-gradient(90deg, var(--primary), var(--secondary));
+                transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+                box-shadow: 0 0 10px var(--primary);
+            }
+
+            /* 任务列表区 */
+            .list-container {
+                width: 100%;
+                max-width: 600px;
+            }
+
+            .week-title {
+                color: var(--text-muted);
+                font-size: 0.9rem;
+                margin: 25px 0 10px 0;
+                letter-spacing: 1px;
+                display: flex;
+                align-items: center;
+            }
+
+            .week-title::before {
+                content: '';
+                display: inline-block;
+                width: 4px;
+                height: 14px;
+                background: var(--primary);
+                margin-right: 8px;
+                border-radius: 2px;
+            }
+
+            /* 任务卡片 */
+            .task-card {
+                background: var(--card-bg);
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                padding: 16px;
+                margin-bottom: 12px;
+                display: flex;
+                align-items: center;
+                transition: all 0.3s ease;
+                cursor: pointer;
+                position: relative;
+                overflow: hidden;
+            }
+
+            /* 点击时的炫酷光波效果 */
+            .task-card.pulse-anim {
+                animation: cardPulse 0.5s ease-out;
+            }
+
+            @keyframes cardPulse {
+                0% {
+                    transform: scale(1);
+                    box-shadow: 0 0 0 rgba(0, 229, 255, 0);
+                }
+                50% {
+                    transform: scale(0.98);
+                    box-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
+                    border-color: var(--secondary);
+                }
+                100% {
+                    transform: scale(1);
+                    box-shadow: 0 0 0 rgba(0, 229, 255, 0);
+                }
+            }
+
+            /* 完成状态下的卡片样式 */
+            .task-card.completed {
+                background: rgba(0, 255, 136, 0.05);
+                border-color: rgba(0, 255, 136, 0.3);
+            }
+
+            .task-card.skipped {
+                background: rgba(120, 120, 120, 0.12);
+                border-color: rgba(120, 120, 120, 0.45);
+            }
+
+            .checkbox {
+                width: 26px;
+                height: 26px;
+                border: 2px solid #555;
+                border-radius: 8px;
+                margin-right: 15px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                flex-shrink: 0;
+            }
+
+            .completed .checkbox {
+                background: var(--success);
+                border-color: var(--success);
+                transform: scale(1.1);
+            }
+
+            .checkbox::after {
+                content: '✓';
+                color: #000;
+                font-weight: bold;
+                font-size: 16px;
+                opacity: 0;
+                transition: opacity 0.2s;
+            }
+
+            .completed .checkbox::after {
+                opacity: 1;
+            }
+
+            .skipped .checkbox {
+                border-color: #888;
+                background: #666;
+                color: #e8e8e8;
+                font-size: 12px;
+                font-weight: 700;
+            }
+
+            .skipped .checkbox::after {
+                content: '−';
+                color: #e8e8e8;
+                opacity: 1;
+            }
+
+            .task-info {
+                flex-grow: 1;
+            }
+
+            .task-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 4px;
+            }
+
+            .task-date {
+                font-family: monospace;
+                font-size: 0.85rem;
+                color: var(--secondary);
+            }
+
+            .task-name {
+                font-size: 1.1rem;
+                font-weight: 600;
+                transition: color 0.3s;
+            }
+
+            /* 核心仪式感：文字删除线 */
+            .completed .task-name {
+                text-decoration: line-through;
+                color: #555;
+            }
+
+            .skipped .task-name {
+                text-decoration: line-through;
+                color: #9a9a9a;
+            }
+
+            .task-desc {
+                font-size: 0.85rem;
+                color: var(--text-muted);
+                margin-top: 4px;
+            }
+
+            .completed .task-desc {
+                opacity: 0.5;
+            }
+
+            .task-note {
+                margin-top: 6px;
+                font-size: 0.82rem;
+                color: #b8b8b8;
+            }
+
+            .task-status {
+                color: #b8b8b8;
+                font-size: 0.85rem;
+                font-family: monospace;
+                margin-left: 6px;
+            }
+
+            .tag {
+                font-size: 0.7rem;
+                padding: 2px 6px;
+                border-radius: 4px;
+                font-weight: bold;
+            }
+
+            .tag.run {
+                background: rgba(255, 77, 0, 0.2);
+                color: var(--primary);
+            }
+            .tag.soccer {
+                background: rgba(0, 229, 255, 0.2);
+                color: var(--secondary);
+            }
+            .tag.rest {
+                background: #333;
+                color: #999;
+            }
+            .tag.race {
+                background: linear-gradient(90deg, #ff4d00, #ffcc00);
+                color: #000;
+                padding: 3px 8px;
+                animation: breathe 2s infinite;
+            }
+
+            @keyframes breathe {
+                0%,
+                100% {
+                    box-shadow: 0 0 5px #ff4d00;
+                }
+                50% {
+                    box-shadow: 0 0 15px #ff4d00;
+                }
+            }
+
+            .pm-footer {
+                margin-top: 40px;
+                text-align: center;
+                font-size: 0.8rem;
+                color: #444;
+                border-top: 1px dashed #333;
+                padding-top: 20px;
+                width: 100%;
+                max-width: 600px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>SUB4 EVOLUTION</h1>
+            <div class="subtitle">Coach: Gemini | Target: 2026.05.24</div>
+        </div>
+
+        <div class="sticky-progress-wrapper">
+            <div class="progress-label">
+                <span>[ SYSTEM BUILD PROGRESS ]</span>
+                <span id="progress-percent">0%</span>
+            </div>
+            <div class="progress-bar">
+                <div id="progress-fill"></div>
+            </div>
+        </div>
+
+        <div class="list-container" id="todo-list"></div>
+
+        <div class="pm-footer">© 2026 临时抱佛脚-赛前一个月突击版专属验收系统</div>
+
+        <script>
+            // 完整的32天数据
+            const STORAGE_KEY = 'marathon_tasks_v2';
+            const planData = [
+                // Week 1
+                {
+                    id: 1,
+                    week: '第1周：耐力基础',
+                    date: '04.23',
+                    name: 'M配速跑 8km',
+                    desc: '配速 5:40，熟悉目标配速、找节奏',
+                    tag: 'run',
+                    tagText: 'RUN',
+                    done: true
+                },
+                {
+                    id: 2,
+                    week: '第1周：耐力基础',
+                    date: '04.24',
+                    name: '完全休息',
+                    desc: '充分恢复，为周末长距离做准备',
+                    tag: 'rest',
+                    tagText: 'REST',
+                    done: false
+                },
+                {
+                    id: 3,
+                    week: '第1周：耐力基础',
+                    date: '04.25',
+                    name: '足球活动',
+                    desc: '轻松活动，别受伤、别上强度',
+                    tag: 'soccer',
+                    tagText: 'SOCCER',
+                    done: false
+                },
+                {
+                    id: 4,
+                    week: '第1周：耐力基础',
+                    date: '04.26',
+                    name: 'LSD 20km',
+                    desc: '配速 6:15-6:30，略疲劳时控制节奏完成',
+                    tag: 'run',
+                    tagText: 'HARD',
+                    done: false
+                },
+
+                // Week 2
+                {
+                    id: 5,
+                    week: '第2周：跑量高峰',
+                    date: '04.27',
+                    name: '完全休息',
+                    desc: '深度拉伸',
+                    tag: 'rest',
+                    tagText: 'REST',
+                    done: false
+                },
+                {
+                    id: 6,
+                    week: '第2周：跑量高峰',
+                    date: '04.28',
+                    name: '轻松跑 10km',
+                    desc: '配速 6:30，排酸',
+                    tag: 'run',
+                    tagText: 'EASY',
+                    done: false
+                },
+                {
+                    id: 7,
+                    week: '第2周：跑量高峰',
+                    date: '04.29',
+                    name: '核心力量训练',
+                    desc: '深蹲、靠墙蹲各3组，补强弱链、预防伤',
+                    tag: 'run',
+                    tagText: 'CORE',
+                    done: false
+                },
+                {
+                    id: 8,
+                    week: '第2周：跑量高峰',
+                    date: '04.30',
+                    name: '强度跑 15km',
+                    desc: '配速 5:40，核心检验课',
+                    tag: 'run',
+                    tagText: 'KEY',
+                    done: false
+                },
+                {
+                    id: 9,
+                    week: '第2周：跑量高峰',
+                    date: '05.01',
+                    name: '完全休息',
+                    desc: '假期多睡',
+                    tag: 'rest',
+                    tagText: 'REST',
+                    done: false
+                },
+                {
+                    id: 10,
+                    week: '第2周：跑量高峰',
+                    date: '05.02',
+                    name: '足球活动',
+                    desc: '控制强度',
+                    tag: 'soccer',
+                    tagText: 'SOCCER',
+                    done: false
+                },
+                {
+                    id: 11,
+                    week: '第2周：跑量高峰',
+                    date: '05.03',
+                    name: 'LSD 30km',
+                    desc: '配速 6:15，本月最长一次，注意补水与配速',
+                    tag: 'run',
+                    tagText: 'MAX',
+                    done: false
+                },
+
+                // Week 3
+                {
+                    id: 12,
+                    week: '第3周：巩固与调整',
+                    date: '05.04',
+                    name: '完全休息',
+                    desc: '完全休息，做拉伸放松',
+                    tag: 'rest',
+                    tagText: 'REST',
+                    done: false
+                },
+                {
+                    id: 13,
+                    week: '第3周：巩固与调整',
+                    date: '05.05',
+                    name: '轻松跑 8km',
+                    desc: '配速 6:30',
+                    tag: 'run',
+                    tagText: 'EASY',
+                    done: false
+                },
+                {
+                    id: 14,
+                    week: '第3周：巩固与调整',
+                    date: '05.06',
+                    name: '轻量力量训练',
+                    desc: '维持肌肉张力',
+                    tag: 'run',
+                    tagText: 'CORE',
+                    done: false
+                },
+                {
+                    id: 15,
+                    week: '第3周：巩固与调整',
+                    date: '05.07',
+                    name: 'M配速跑 12km',
+                    desc: '配速 5:40，寻找巡航感',
+                    tag: 'run',
+                    tagText: 'KEY',
+                    done: false
+                },
+                {
+                    id: 16,
+                    week: '第3周：巩固与调整',
+                    date: '05.08',
+                    name: '完全休息',
+                    desc: '开始增加营养',
+                    tag: 'rest',
+                    tagText: 'REST',
+                    done: false
+                },
+                {
+                    id: 17,
+                    week: '第3周：巩固与调整',
+                    date: '05.09',
+                    name: '轻量足球',
+                    desc: '只踢半场，绝不硬拼',
+                    tag: 'soccer',
+                    tagText: 'SOCCER',
+                    done: false
+                },
+                {
+                    id: 18,
+                    week: '第3周：巩固与调整',
+                    date: '05.10',
+                    name: '中长距离 18km',
+                    desc: '配速 6:00',
+                    tag: 'run',
+                    tagText: 'RUN',
+                    done: false
+                },
+
+                // Week 4
+                {
+                    id: 19,
+                    week: '第4周：赛前减量',
+                    date: '05.11',
+                    name: '完全休息',
+                    desc: '超量恢复期开始',
+                    tag: 'rest',
+                    tagText: 'REST',
+                    done: false
+                },
+                {
+                    id: 20,
+                    week: '第4周：赛前减量',
+                    date: '05.12',
+                    name: '轻松跑 6km',
+                    desc: '配速 6:30',
+                    tag: 'run',
+                    tagText: 'EASY',
+                    done: false
+                },
+                {
+                    id: 21,
+                    week: '第4周：赛前减量',
+                    date: '05.13',
+                    name: '完全休息',
+                    desc: '谨防感冒',
+                    tag: 'rest',
+                    tagText: 'REST',
+                    done: false
+                },
+                {
+                    id: 22,
+                    week: '第4周：赛前减量',
+                    date: '05.14',
+                    name: 'M配速跑 8km',
+                    desc: '配速 5:40',
+                    tag: 'run',
+                    tagText: 'KEY',
+                    done: false
+                },
+                {
+                    id: 23,
+                    week: '第4周：赛前减量',
+                    date: '05.15',
+                    name: '完全休息',
+                    desc: '放松心情',
+                    tag: 'rest',
+                    tagText: 'REST',
+                    done: false
+                },
+                {
+                    id: 24,
+                    week: '第4周：赛前减量',
+                    date: '05.16',
+                    name: '不踢球',
+                    desc: '场边观战或散步，避免任何对抗',
+                    tag: 'soccer',
+                    tagText: 'BAN',
+                    done: false
+                },
+                {
+                    id: 25,
+                    week: '第4周：赛前减量',
+                    date: '05.17',
+                    name: '模拟跑 12km',
+                    desc: '配速 6:00',
+                    tag: 'run',
+                    tagText: 'RUN',
+                    done: false
+                },
+
+                // Week 5
+                {
+                    id: 26,
+                    week: '第5周：赛前一周',
+                    date: '05.18',
+                    name: '完全休息',
+                    desc: '休息就是最好的训练',
+                    tag: 'rest',
+                    tagText: 'REST',
+                    done: false
+                },
+                {
+                    id: 27,
+                    week: '第5周：赛前一周',
+                    date: '05.19',
+                    name: '唤醒跑 5km',
+                    desc: '包含2km 5:40配速',
+                    tag: 'run',
+                    tagText: 'EASY',
+                    done: false
+                },
+                {
+                    id: 28,
+                    week: '第5周：赛前一周',
+                    date: '05.20',
+                    name: '完全休息',
+                    desc: '三餐适当增加碳水，为身体储糖',
+                    tag: 'rest',
+                    tagText: 'REST',
+                    done: false
+                },
+                {
+                    id: 29,
+                    week: '第5周：赛前一周',
+                    date: '05.21',
+                    name: '短距离轻松跑 3km',
+                    desc: '活动开即可，别累着',
+                    tag: 'run',
+                    tagText: 'EASY',
+                    done: false
+                },
+                {
+                    id: 30,
+                    week: '第5周：赛前一周',
+                    date: '05.22',
+                    name: '完全休息',
+                    desc: '准备装备，贴乳贴',
+                    tag: 'rest',
+                    tagText: 'REST',
+                    done: false
+                },
+                {
+                    id: 31,
+                    week: '第5周：赛前一周',
+                    date: '05.23',
+                    name: '静养日',
+                    desc: '赛前一天，多喝水、早休息',
+                    tag: 'rest',
+                    tagText: '静养',
+                    done: false
+                },
+                {
+                    id: 32,
+                    week: '第5周：赛前一周',
+                    date: '05.24',
+                    name: '比赛日 · 全程马拉松',
+                    desc: '目标进 4 小时，按配速与补给执行',
+                    tag: 'race',
+                    tagText: '比赛',
+                    done: false
+                }
+            ];
+
+            function init() {
+                // 读取本地存储，保留打勾状态
+                const savedData = localStorage.getItem(STORAGE_KEY);
+                let currentTasks = planData;
+
+                if (savedData) {
+                    const parsed = JSON.parse(savedData);
+                    // 合并状态，防止代码更新覆盖已完成的进度
+                    currentTasks = planData.map(task => {
+                        const savedTask = parsed.find(t => t.id === task.id);
+                        return savedTask
+                            ? {
+                                  ...task,
+                                  done: Boolean(savedTask.done),
+                                  skipped: Boolean(savedTask.skipped),
+                                  skipNote: savedTask.skipNote || '',
+                                  extraNote: savedTask.extraNote || ''
+                              }
+                            : task;
+                    });
+                }
+                render(currentTasks);
+            }
+
+            function triggerConfetti() {
+                // 完成时两侧撒花
+                var duration = 2 * 1000;
+                var end = Date.now() + duration;
+
+                (function frame() {
+                    confetti({
+                        particleCount: 3,
+                        angle: 60,
+                        spread: 55,
+                        origin: { x: 0 },
+                        colors: ['#ff4d00', '#00e5ff', '#ffffff']
+                    });
+                    confetti({
+                        particleCount: 3,
+                        angle: 120,
+                        spread: 55,
+                        origin: { x: 1 },
+                        colors: ['#ff4d00', '#00e5ff', '#ffffff']
+                    });
+
+                    if (Date.now() < end) {
+                        requestAnimationFrame(frame);
+                    }
+                })();
+            }
+
+            function render(data) {
+                const list = document.getElementById('todo-list');
+                list.innerHTML = '';
+
+                let currentWeek = '';
+                let completedCount = 0;
+
+                data.forEach((task, index) => {
+                    // 渲染周标题
+                    if (task.week !== currentWeek) {
+                        currentWeek = task.week;
+                        const weekTitle = document.createElement('div');
+                        weekTitle.className = 'week-title';
+                        weekTitle.innerText = currentWeek;
+                        list.appendChild(weekTitle);
+                    }
+
+                    // 渲染任务卡片
+                    const card = document.createElement('div');
+                    card.id = `task-${task.id}`;
+                    let statusClass = '';
+                    if (task.skipped) {
+                        statusClass = 'skipped';
+                    } else if (task.done) {
+                        statusClass = 'completed';
+                    }
+                    card.className = `task-card ${statusClass}`;
+                    const statusText = task.skipped ? '<span class="task-status">[-] SKIPPED</span>' : '';
+                    const skipNoteText = task.skipped && task.skipNote ? `<div class="task-note">跳过原因：${escapeHtml(task.skipNote)}</div>` : '';
+                    const extraNoteText = task.extraNote ? `<div class="task-note">训练备注：${escapeHtml(task.extraNote)}</div>` : '';
+                    const noteHint = task.extraNote ? ' · 有备注' : '';
+
+                    card.innerHTML = `
+                    <div class="checkbox"></div>
+                    <div class="task-info">
+                        <div class="task-header">
+                            <span class="task-date">${task.date}</span>
+                            <span class="tag ${task.tag}">${task.tagText}${noteHint}</span>
+                        </div>
+                        <div class="task-name">${task.name} ${statusText}</div>
+                        <div class="task-desc">${task.desc}</div>
+                        ${skipNoteText}
+                        ${extraNoteText}
+                    </div>
+                `;
+
+                    // 绑定点击事件
+                    card.onclick = () => handleCardClick(task.id, data, card);
+                    card.ondblclick = () => toggleSkip(task.id, data);
+                    bindLongPressNote(card, task.id, data);
+                    card.oncontextmenu = event => {
+                        event.preventDefault();
+                        editExtraNote(task.id, data);
+                    };
+                    list.appendChild(card);
+
+                    if (task.done && !task.skipped) completedCount++;
+                });
+
+                updateProgress(completedCount, data.length);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            }
+
+            let clickTimer = null;
+            let longPressTimer = null;
+            let suppressClickOnce = false;
+            const LONG_PRESS_MS = 450;
+
+            function handleCardClick(id, data, cardElement) {
+                if (suppressClickOnce) {
+                    suppressClickOnce = false;
+                    return;
+                }
+                if (clickTimer) {
+                    clearTimeout(clickTimer);
+                }
+                clickTimer = setTimeout(() => {
+                    toggleTask(id, data, cardElement);
+                    clickTimer = null;
+                }, 220);
+            }
+
+            function toggleTask(id, data, cardElement) {
+                const task = data.find(t => t.id === id);
+                task.done = !task.done;
+                if (task.done) {
+                    task.skipped = false;
+                    task.skipNote = '';
+                }
+
+                // 触发动效
+                cardElement.classList.add('pulse-anim');
+                setTimeout(() => cardElement.classList.remove('pulse-anim'), 500);
+
+                if (task.done) {
+                    triggerConfetti(); // 仅在完成时撒花
+
+                    // 手机震动反馈 (部分安卓浏览器支持)
+                    if (navigator.vibrate) navigator.vibrate(50);
+                }
+
+                // 更新数据与进度条
+                render(data);
+            }
+
+            function bindLongPressNote(card, taskId, data) {
+                const start = () => {
+                    clearLongPress();
+                    longPressTimer = setTimeout(() => {
+                        suppressClickOnce = true;
+                        editExtraNote(taskId, data);
+                    }, LONG_PRESS_MS);
+                };
+                const cancel = () => {
+                    clearLongPress();
+                };
+
+                card.addEventListener('mousedown', start);
+                card.addEventListener('mouseup', cancel);
+                card.addEventListener('mouseleave', cancel);
+                card.addEventListener('touchstart', start, { passive: true });
+                card.addEventListener('touchend', cancel);
+                card.addEventListener('touchcancel', cancel);
+            }
+
+            function clearLongPress() {
+                if (longPressTimer) {
+                    clearTimeout(longPressTimer);
+                    longPressTimer = null;
+                }
+            }
+
+            function editExtraNote(id, data) {
+                const task = data.find(t => t.id === id);
+                const input = prompt('请输入训练备注（可留空清除）：', task.extraNote || '');
+                if (input === null) {
+                    return;
+                }
+                task.extraNote = input.trim();
+                render(data);
+            }
+
+            function toggleSkip(id, data) {
+                if (clickTimer) {
+                    clearTimeout(clickTimer);
+                    clickTimer = null;
+                }
+                const task = data.find(t => t.id === id);
+                const nextSkipped = !task.skipped;
+                if (nextSkipped) {
+                    const input = prompt('请输入跳过原因（备注）：', task.skipNote || '');
+                    if (input === null) {
+                        return;
+                    }
+                    task.skipNote = input.trim();
+                } else {
+                    task.skipNote = '';
+                }
+                task.skipped = nextSkipped;
+                if (task.skipped) {
+                    task.done = false;
+                }
+                render(data);
+            }
+
+            function escapeHtml(value) {
+                return String(value)
+                    .replaceAll('&', '&amp;')
+                    .replaceAll('<', '&lt;')
+                    .replaceAll('>', '&gt;')
+                    .replaceAll('"', '&quot;')
+                    .replaceAll("'", '&#39;');
+            }
+
+            function updateProgress(completed, total) {
+                const percent = Math.round((completed / total) * 100);
+                document.getElementById('progress-fill').style.width = percent + '%';
+                document.getElementById('progress-percent').innerText = `${completed}/${total} [${percent}%]`;
+            }
+
+            init();
+        </script>
+    </body>
+</html>
