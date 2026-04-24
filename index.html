@@ -130,6 +130,159 @@
                 font-weight: 600;
             }
 
+            .race-result-banner {
+                width: 100%;
+                max-width: 600px;
+                margin: 0 0 14px 0;
+                padding: 20px 22px;
+                border-radius: 14px;
+                border: 1px solid #6b5200;
+                background: linear-gradient(135deg, rgba(255, 183, 0, 0.28), rgba(255, 77, 0, 0.22));
+                box-shadow: 0 0 24px rgba(255, 183, 0, 0.45);
+                font-size: 1.28rem;
+                font-weight: 800;
+                color: #fff1b8;
+                text-align: center;
+                letter-spacing: 0.8px;
+                display: none;
+            }
+
+            .race-result-banner.show {
+                display: block;
+                animation: raceBannerGlow 1.2s ease-in-out infinite alternate;
+            }
+
+            @keyframes raceBannerGlow {
+                from {
+                    box-shadow: 0 0 12px rgba(255, 183, 0, 0.25);
+                }
+                to {
+                    box-shadow: 0 0 28px rgba(255, 183, 0, 0.6);
+                }
+            }
+
+            .race-modal {
+                position: fixed;
+                inset: 0;
+                z-index: 1000;
+                display: none;
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+                background: rgba(0, 0, 0, 0.7);
+            }
+
+            .race-modal.show {
+                display: flex;
+            }
+
+            .race-modal-card {
+                width: 100%;
+                max-width: 420px;
+                background: #151515;
+                border: 1px solid #353535;
+                border-radius: 14px;
+                padding: 20px;
+            }
+
+            .race-modal-title {
+                margin: 0 0 10px 0;
+                font-size: 1.2rem;
+            }
+
+            .race-modal-tip {
+                color: #b0b0b0;
+                font-size: 0.86rem;
+                margin-bottom: 12px;
+            }
+
+            .race-time-input {
+                width: 100%;
+                background: #0f0f0f;
+                color: #f2f2f2;
+                border: 1px solid #444;
+                border-radius: 8px;
+                padding: 10px 12px;
+                font-size: 1rem;
+                margin-bottom: 10px;
+            }
+
+            .race-modal-actions {
+                display: flex;
+                gap: 8px;
+            }
+
+            .race-btn {
+                border: 1px solid #444;
+                border-radius: 8px;
+                background: #222;
+                color: #eee;
+                padding: 8px 12px;
+                cursor: pointer;
+            }
+
+            .race-btn.primary {
+                border-color: #ff7a2f;
+                background: #ff5f1f;
+                color: #fff;
+            }
+
+            .race-result-overlay {
+                position: fixed;
+                inset: 0;
+                z-index: 999;
+                pointer-events: none;
+                opacity: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+                padding: 20px;
+            }
+
+            .race-result-overlay.show {
+                animation: raceOverlayInOut 2.4s ease forwards;
+            }
+
+            .race-result-text {
+                font-size: clamp(1.6rem, 8vw, 3rem);
+                font-weight: 800;
+                text-shadow: 0 0 14px rgba(0, 0, 0, 0.5);
+                white-space: pre-line;
+            }
+
+            .race-result-overlay.achieved {
+                background: radial-gradient(circle, rgba(0, 255, 136, 0.28), rgba(0, 0, 0, 0));
+            }
+
+            .race-result-overlay.missed {
+                background: radial-gradient(circle, rgba(0, 229, 255, 0.2), rgba(0, 0, 0, 0));
+            }
+
+            .race-result-overlay.far {
+                background: radial-gradient(circle, rgba(255, 140, 0, 0.2), rgba(0, 0, 0, 0));
+            }
+
+            .race-result-overlay.regret {
+                background: radial-gradient(circle, rgba(255, 77, 77, 0.2), rgba(0, 0, 0, 0));
+            }
+
+            @keyframes raceOverlayInOut {
+                0% {
+                    opacity: 0;
+                    transform: scale(0.94);
+                }
+                15%,
+                80% {
+                    opacity: 1;
+                    transform: scale(1);
+                }
+                100% {
+                    opacity: 0;
+                    transform: scale(1.04);
+                }
+            }
+
             .week-title {
                 color: var(--text-muted);
                 font-size: 0.9rem;
@@ -367,13 +520,32 @@
             <b>手势说明：</b>单击卡片标记完成；双击卡片标记跳过并填写原因；长按卡片（约 450ms）添加训练备注。
         </div>
 
+        <div id="race-result-banner" class="race-result-banner"></div>
         <div class="list-container" id="todo-list"></div>
 
         <div class="pm-footer">© 2026 临时抱佛脚-赛前一个月突击版专属验收系统</div>
 
+        <div id="race-modal" class="race-modal">
+            <div class="race-modal-card">
+                <h3 class="race-modal-title">输入全马成绩</h3>
+                <div class="race-modal-tip">格式示例：03:58:20 或 4:12:05</div>
+                <input id="race-time-input" class="race-time-input" type="text" placeholder="HH:MM:SS" />
+                <div class="race-modal-actions">
+                    <button id="race-submit-btn" class="race-btn primary" type="button">确认成绩</button>
+                    <button id="race-cancel-btn" class="race-btn" type="button">稍后再填</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="race-result-overlay" class="race-result-overlay">
+            <div id="race-result-text" class="race-result-text"></div>
+        </div>
+
         <script>
             // 完整的32天数据
             const STORAGE_KEY = 'marathon_tasks_v2';
+            const RACE_RESULT_KEY = 'marathon_race_result_v1';
+            const RACE_TASK_ID = 32;
             const planData = [
                 // Week 1
                 {
@@ -727,7 +899,9 @@
                             : task;
                     });
                 }
+                bindRaceModalEvents(currentTasks);
                 render(currentTasks);
+                autoScrollToToday(currentTasks);
             }
 
             function triggerConfetti() {
@@ -818,6 +992,7 @@
 
                 updateProgress(completedCount, data.length);
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+                renderRaceResultBanner();
             }
 
             let clickTimer = null;
@@ -842,6 +1017,9 @@
             function toggleTask(id, data, cardElement) {
                 const task = data.find(t => t.id === id);
                 task.done = !task.done;
+                if (!task.done && task.id === RACE_TASK_ID) {
+                    localStorage.removeItem(RACE_RESULT_KEY);
+                }
                 if (task.done) {
                     task.skipped = false;
                     task.skipNote = '';
@@ -856,6 +1034,9 @@
 
                     // 手机震动反馈 (部分安卓浏览器支持)
                     if (navigator.vibrate) navigator.vibrate(50);
+                    if (task.id === RACE_TASK_ID) {
+                        openRaceModal();
+                    }
                 }
 
                 // 更新数据与进度条
@@ -929,6 +1110,165 @@
                     .replaceAll('>', '&gt;')
                     .replaceAll('"', '&quot;')
                     .replaceAll("'", '&#39;');
+            }
+
+            function autoScrollToToday(data) {
+                const today = new Date();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                const todayKey = `${month}.${day}`;
+                const task = data.find(item => item.date === todayKey);
+                if (!task) {
+                    return;
+                }
+
+                // 等待首屏渲染完成后再滚动
+                requestAnimationFrame(() => {
+                    const target = document.getElementById(`task-${task.id}`);
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                });
+            }
+
+            function bindRaceModalEvents(data) {
+                const modal = document.getElementById('race-modal');
+                const input = document.getElementById('race-time-input');
+                const submitBtn = document.getElementById('race-submit-btn');
+                const cancelBtn = document.getElementById('race-cancel-btn');
+
+                submitBtn.onclick = () => handleRaceSubmit(data);
+                cancelBtn.onclick = () => closeRaceModal();
+                input.addEventListener('keydown', event => {
+                    if (event.key === 'Enter') {
+                        handleRaceSubmit(data);
+                    }
+                });
+                modal.addEventListener('click', event => {
+                    if (event.target === modal) {
+                        closeRaceModal();
+                    }
+                });
+            }
+
+            function openRaceModal() {
+                const modal = document.getElementById('race-modal');
+                const input = document.getElementById('race-time-input');
+                input.value = '';
+                modal.classList.add('show');
+                setTimeout(() => input.focus(), 0);
+            }
+
+            function closeRaceModal() {
+                const modal = document.getElementById('race-modal');
+                modal.classList.remove('show');
+            }
+
+            function handleRaceSubmit(data) {
+                const input = document.getElementById('race-time-input');
+                const raw = input.value.trim();
+                const normalized = raw.toLowerCase();
+                if (normalized === 'dnf' || raw === '退赛') {
+                    const classification = { status: 'regret', title: '很遗憾', subtitle: '这次没能顺利完赛，但你已经很勇敢。' };
+                    playRaceCeremony(classification, raw.toUpperCase());
+                    saveRaceResult(classification, raw.toUpperCase());
+                    closeRaceModal();
+                    render(data);
+                    return;
+                }
+
+                const parsed = parseRaceTime(raw);
+                if (!parsed) {
+                    alert('请输入有效成绩，例如 03:58:20');
+                    return;
+                }
+
+                const classification = classifyRaceResult(parsed.totalSeconds);
+                playRaceCeremony(classification, parsed.display);
+                saveRaceResult(classification, parsed.display);
+                closeRaceModal();
+                render(data);
+            }
+
+            function parseRaceTime(raw) {
+                const match = raw.match(/^(\d{1,2}):([0-5]\d):([0-5]\d)$/);
+                if (!match) {
+                    return null;
+                }
+                const hours = Number(match[1]);
+                const minutes = Number(match[2]);
+                const seconds = Number(match[3]);
+                const totalSeconds = hours * 3600 + minutes * 60 + seconds;
+                const display = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                return { totalSeconds, display };
+            }
+
+            function classifyRaceResult(totalSeconds) {
+                if (totalSeconds <= 3 * 3600 + 59 * 60 + 59) {
+                    return { status: 'achieved', title: '目标达成', subtitle: 'Sub-4 成功，今天属于你！' };
+                }
+                if (totalSeconds <= 4 * 3600 + 15 * 60) {
+                    return { status: 'missed', title: '目标未达成', subtitle: '差一点点，下次一定破4。' };
+                }
+                if (totalSeconds <= 4 * 3600 + 45 * 60) {
+                    return { status: 'far', title: '差得远', subtitle: '先稳住节奏，继续积累训练。' };
+                }
+                return { status: 'regret', title: '很遗憾', subtitle: '今天状态一般，慢慢来，别否定自己。' };
+            }
+
+            function playRaceCeremony(classification, displayTime) {
+                const overlay = document.getElementById('race-result-overlay');
+                const text = document.getElementById('race-result-text');
+                overlay.className = `race-result-overlay ${classification.status}`;
+                text.textContent = `${classification.title}\n${displayTime}\n${classification.subtitle}`;
+                overlay.classList.add('show');
+
+                if (classification.status === 'achieved') {
+                    triggerConfetti();
+                } else if (navigator.vibrate) {
+                    navigator.vibrate([30, 60, 30]);
+                }
+
+                setTimeout(() => {
+                    overlay.classList.remove('show');
+                    scrollToRaceBanner();
+                }, 2400);
+            }
+
+            function saveRaceResult(classification, displayTime) {
+                const payload = {
+                    status: classification.status,
+                    title: classification.title,
+                    time: displayTime
+                };
+                localStorage.setItem(RACE_RESULT_KEY, JSON.stringify(payload));
+            }
+
+            function renderRaceResultBanner() {
+                const banner = document.getElementById('race-result-banner');
+                const saved = localStorage.getItem(RACE_RESULT_KEY);
+                if (!saved) {
+                    banner.classList.remove('show');
+                    banner.textContent = '';
+                    return;
+                }
+                const payload = JSON.parse(saved);
+                if (payload.status === 'achieved') {
+                    banner.textContent = `目标达成！全马成绩 ${payload.time}`;
+                    banner.classList.add('show');
+                } else {
+                    banner.classList.remove('show');
+                    banner.textContent = '';
+                }
+            }
+
+            function scrollToRaceBanner() {
+                const banner = document.getElementById('race-result-banner');
+                if (banner && banner.classList.contains('show')) {
+                    banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    return;
+                }
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             }
 
             function updateProgress(completed, total) {
