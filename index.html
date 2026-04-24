@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-        <title>SUB4 EVOLUTION | 全马破4计划</title>
+        <title>Last-Minute Sub-4 Mission | 全马破4计划</title>
         <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
         <style>
             :root {
@@ -365,7 +365,9 @@
                 opacity: 0;
                 transform: translateX(-50%) translateY(8px);
                 pointer-events: none;
-                transition: opacity 0.28s ease, transform 0.28s ease;
+                transition:
+                    opacity 0.28s ease,
+                    transform 0.28s ease;
                 box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
             }
 
@@ -538,7 +540,7 @@
     </head>
     <body>
         <div class="header">
-            <h1>SUB4 EVOLUTION</h1>
+            <h1>Last-Minute Sub-4 Mission</h1>
             <div class="subtitle">Coach: Gemini | Target: 2026.05.24</div>
         </div>
 
@@ -553,7 +555,8 @@
         </div>
 
         <div class="gesture-tips">
-            <b>手势说明：</b>仅「当天」可改状态；单击完成、双击手动跳过、长按备注。日切时若当天仍未完成，将自动记为跳过且无法撤销。点选过去或未来的计划会轻提示且无法操作。
+            <b>手势说明：</b
+            >仅「当天」可改状态；单击完成、双击手动跳过、长按备注。日切时若当天仍未完成，将自动记为跳过且无法撤销。点选过去或未来的计划会轻提示且无法操作。
         </div>
 
         <div id="race-result-banner" class="race-result-banner"></div>
@@ -1071,8 +1074,13 @@
                     const statusText = task.skipped
                         ? `<span class="task-status">[-] ${task.autoSkip ? '自动跳过' : 'SKIPPED'}</span>`
                         : '';
-                    const skipNoteText = task.skipped && task.skipNote ? `<div class="task-note">跳过原因：${escapeHtml(task.skipNote)}</div>` : '';
-                    const extraNoteText = task.extraNote ? `<div class="task-note">训练备注：${escapeHtml(task.extraNote)}</div>` : '';
+                    const skipNoteText =
+                        task.skipped && task.skipNote
+                            ? `<div class="task-note">跳过原因：${escapeHtml(task.skipNote)}</div>`
+                            : '';
+                    const extraNoteText = task.extraNote
+                        ? `<div class="task-note">训练备注：${escapeHtml(task.extraNote)}</div>`
+                        : '';
                     const noteHint = task.extraNote ? ' · 有备注' : '';
 
                     card.innerHTML = `
@@ -1361,7 +1369,11 @@
                 const raw = input.value.trim();
                 const normalized = raw.toLowerCase();
                 if (normalized === 'dnf' || raw === '退赛') {
-                    const classification = { status: 'regret', title: '很遗憾', subtitle: '这次没能顺利完赛，但你已经很勇敢。' };
+                    const classification = {
+                        status: 'regret',
+                        title: '很遗憾',
+                        subtitle: '这次没能顺利完赛，但你已经很勇敢。'
+                    };
                     playRaceCeremony(classification, raw.toUpperCase());
                     saveRaceResult(classification, raw.toUpperCase());
                     closeRaceModal();
