@@ -338,6 +338,42 @@
                 }
             }
 
+            .task-card.day-past,
+            .task-card.day-future {
+                opacity: 0.72;
+                cursor: not-allowed;
+            }
+
+            .task-card.day-today {
+                box-shadow: 0 0 0 1px rgba(0, 229, 255, 0.2);
+            }
+
+            .app-toast {
+                position: fixed;
+                left: 50%;
+                bottom: 28px;
+                max-width: min(90%, 360px);
+                padding: 10px 16px;
+                background: rgba(30, 30, 30, 0.94);
+                border: 1px solid #3a3a3a;
+                border-radius: 10px;
+                color: #e4e4e4;
+                font-size: 0.86rem;
+                line-height: 1.45;
+                text-align: center;
+                z-index: 2000;
+                opacity: 0;
+                transform: translateX(-50%) translateY(8px);
+                pointer-events: none;
+                transition: opacity 0.28s ease, transform 0.28s ease;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            }
+
+            .app-toast.show {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+
             /* 完成状态下的卡片样式 */
             .task-card.completed {
                 background: rgba(0, 255, 136, 0.05);
@@ -517,7 +553,7 @@
         </div>
 
         <div class="gesture-tips">
-            <b>手势说明：</b>单击卡片标记完成；双击卡片标记跳过并填写原因；长按卡片（约 450ms）添加训练备注。
+            <b>手势说明：</b>仅「当天」可改状态；单击完成、双击手动跳过、长按备注。日切时若当天仍未完成，将自动记为跳过且无法撤销。点选过去或未来的计划会轻提示且无法操作。
         </div>
 
         <div id="race-result-banner" class="race-result-banner"></div>
@@ -540,12 +576,73 @@
         <div id="race-result-overlay" class="race-result-overlay">
             <div id="race-result-text" class="race-result-text"></div>
         </div>
+        <div id="app-toast" class="app-toast" role="status" aria-live="polite"></div>
 
         <script>
             // 完整的32天数据
             const STORAGE_KEY = 'marathon_tasks_v2';
             const RACE_RESULT_KEY = 'marathon_race_result_v1';
             const RACE_TASK_ID = 32;
+            const AUTO_SKIP_NOTE = '日切时仍未标记完成，已自动记为跳过';
+
+            let appTasksRef = null;
+            let lastSeenTodayKey = '';
+            let toastHideTimer = null;
+
+            function getTodayKey() {
+                const t = new Date();
+                return `${String(t.getMonth() + 1).padStart(2, '0')}.${String(t.getDate()).padStart(2, '0')}`;
+            }
+
+            /** @returns {'past'|'today'|'future'} */
+            function getDateRelation(taskDate) {
+                const today = getTodayKey();
+                if (taskDate < today) return 'past';
+                if (taskDate > today) return 'future';
+                return 'today';
+            }
+
+            function showToast(message) {
+                const el = document.getElementById('app-toast');
+                if (!el) {
+                    return;
+                }
+                el.textContent = message;
+                el.classList.add('show');
+                if (toastHideTimer) {
+                    clearTimeout(toastHideTimer);
+                }
+                toastHideTimer = setTimeout(() => {
+                    el.classList.remove('show');
+                }, 2400);
+            }
+
+            function applyOverdueAutoSkips(data) {
+                const todayK = getTodayKey();
+                let changed = false;
+                data.forEach(task => {
+                    if (task.date < todayK && !task.done && !task.skipped) {
+                        task.skipped = true;
+                        task.autoSkip = true;
+                        task.skipNote = AUTO_SKIP_NOTE;
+                        changed = true;
+                    }
+                });
+                return changed;
+            }
+
+            function tryDayRolloverAndRefresh() {
+                const k = getTodayKey();
+                if (k === lastSeenTodayKey) {
+                    return;
+                }
+                lastSeenTodayKey = k;
+                if (!appTasksRef) {
+                    return;
+                }
+                applyOverdueAutoSkips(appTasksRef);
+                render(appTasksRef);
+            }
             const planData = [
                 // Week 1
                 {
@@ -894,11 +991,20 @@
                                   done: Boolean(savedTask.done),
                                   skipped: Boolean(savedTask.skipped),
                                   skipNote: savedTask.skipNote || '',
-                                  extraNote: savedTask.extraNote || ''
+                                  extraNote: savedTask.extraNote || '',
+                                  autoSkip: Boolean(savedTask.autoSkip)
                               }
                             : task;
                     });
                 }
+                appTasksRef = currentTasks;
+                lastSeenTodayKey = getTodayKey();
+                document.addEventListener('visibilitychange', () => {
+                    if (document.visibilityState === 'visible') {
+                        tryDayRolloverAndRefresh();
+                    }
+                });
+                setInterval(tryDayRolloverAndRefresh, 20000);
                 bindRaceModalEvents(currentTasks);
                 render(currentTasks);
                 autoScrollToToday(currentTasks);
@@ -932,6 +1038,7 @@
             }
 
             function render(data) {
+                applyOverdueAutoSkips(data);
                 const list = document.getElementById('todo-list');
                 list.innerHTML = '';
 
@@ -951,14 +1058,19 @@
                     // 渲染任务卡片
                     const card = document.createElement('div');
                     card.id = `task-${task.id}`;
+                    const rel = getDateRelation(task.date);
+                    const dayClass = rel === 'today' ? 'day-today' : rel === 'past' ? 'day-past' : 'day-future';
                     let statusClass = '';
                     if (task.skipped) {
                         statusClass = 'skipped';
                     } else if (task.done) {
                         statusClass = 'completed';
                     }
-                    card.className = `task-card ${statusClass}`;
-                    const statusText = task.skipped ? '<span class="task-status">[-] SKIPPED</span>' : '';
+                    const cardClasses = ['task-card', statusClass, dayClass].filter(c => c);
+                    card.className = cardClasses.join(' ');
+                    const statusText = task.skipped
+                        ? `<span class="task-status">[-] ${task.autoSkip ? '自动跳过' : 'SKIPPED'}</span>`
+                        : '';
                     const skipNoteText = task.skipped && task.skipNote ? `<div class="task-note">跳过原因：${escapeHtml(task.skipNote)}</div>` : '';
                     const extraNoteText = task.extraNote ? `<div class="task-note">训练备注：${escapeHtml(task.extraNote)}</div>` : '';
                     const noteHint = task.extraNote ? ' · 有备注' : '';
@@ -1017,6 +1129,18 @@
 
             function toggleTask(id, data, cardElement) {
                 const task = data.find(t => t.id === id);
+                if (getDateRelation(task.date) === 'past') {
+                    showToast('已过去的计划无法改订，仅可操作「今日」条目。');
+                    return;
+                }
+                if (getDateRelation(task.date) === 'future') {
+                    showToast('该日尚未到，请当天再来标记完成。');
+                    return;
+                }
+                if (task.autoSkip) {
+                    showToast('系统已按日切自动记为跳过，无法撤销。');
+                    return;
+                }
                 task.done = !task.done;
                 if (!task.done && task.id === RACE_TASK_ID) {
                     localStorage.removeItem(RACE_RESULT_KEY);
@@ -1024,6 +1148,7 @@
                 if (task.done) {
                     task.skipped = false;
                     task.skipNote = '';
+                    task.autoSkip = false;
                 }
 
                 // 触发动效
@@ -1069,6 +1194,17 @@
                         if (movedTooFar) {
                             return;
                         }
+                        const t = data.find(x => x.id === taskId);
+                        if (!t || getDateRelation(t.date) !== 'today') {
+                            if (t) {
+                                if (getDateRelation(t.date) === 'past') {
+                                    showToast('已过去的计划无法改订，仅可编辑「今日」备注。');
+                                } else {
+                                    showToast('该日尚未到，请当天再添加备注。');
+                                }
+                            }
+                            return;
+                        }
                         suppressClickOnce = true;
                         editExtraNote(taskId, data);
                     }, LONG_PRESS_MS);
@@ -1110,6 +1246,14 @@
 
             function editExtraNote(id, data) {
                 const task = data.find(t => t.id === id);
+                if (getDateRelation(task.date) === 'past') {
+                    showToast('已过去的计划无法改订，仅可编辑「今日」备注。');
+                    return;
+                }
+                if (getDateRelation(task.date) === 'future') {
+                    showToast('该日尚未到，请当天再添加备注。');
+                    return;
+                }
                 const input = prompt('请输入训练备注（可留空清除）：', task.extraNote || '');
                 if (input === null) {
                     return;
@@ -1124,6 +1268,18 @@
                     clickTimer = null;
                 }
                 const task = data.find(t => t.id === id);
+                if (getDateRelation(task.date) === 'past') {
+                    showToast('已过去的计划无法改订，仅可在「今日」手动跳过。');
+                    return;
+                }
+                if (getDateRelation(task.date) === 'future') {
+                    showToast('该日尚未到，请当天再操作。');
+                    return;
+                }
+                if (task.autoSkip) {
+                    showToast('系统已按日切自动记为跳过，无法撤销。');
+                    return;
+                }
                 const nextSkipped = !task.skipped;
                 if (nextSkipped) {
                     const input = prompt('请输入跳过原因（备注）：', task.skipNote || '');
@@ -1137,6 +1293,7 @@
                 task.skipped = nextSkipped;
                 if (task.skipped) {
                     task.done = false;
+                    task.autoSkip = false;
                 }
                 render(data);
             }
@@ -1151,10 +1308,7 @@
             }
 
             function autoScrollToToday(data) {
-                const today = new Date();
-                const month = String(today.getMonth() + 1).padStart(2, '0');
-                const day = String(today.getDate()).padStart(2, '0');
-                const todayKey = `${month}.${day}`;
+                const todayKey = getTodayKey();
                 const task = data.find(item => item.date === todayKey);
                 if (!task) {
                     return;
