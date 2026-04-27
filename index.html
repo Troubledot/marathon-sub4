@@ -665,7 +665,8 @@
                     desc: '滚泡沫轴，修复昨日肌肉微损。',
                     tag: 'rest',
                     tagText: 'REST',
-                    done: false
+                    extraNote: '蹭了一会儿匹克球',
+                    done: true
                 },
                 {
                     id: 3,
@@ -675,7 +676,7 @@
                     desc: '正常参加。当作动态间歇训练，注意热身。',
                     tag: 'soccer',
                     tagText: 'SOCCER',
-                    done: false
+                    done: true
                 },
                 {
                     id: 4,
@@ -685,7 +686,8 @@
                     desc: '配速 6:15-6:30/km。第一场“背靠背”考验。',
                     tag: 'run',
                     tagText: 'HARD',
-                    done: false
+                    extraNote: '送了两公里！',
+                    done: true
                 },
                 {
                     id: 5,
@@ -967,7 +969,12 @@
                     tagText: 'RACE',
                     done: false
                 }
-            ];
+            ].map(task => ({
+                skipped: false,
+                skipNote: '',
+                extraNote: '',
+                ...task
+            }));
 
             function init() {
                 // 读取本地存储，保留打勾状态
