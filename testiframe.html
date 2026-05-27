@@ -14,13 +14,35 @@
         token: 'j44d3EuTfWaj4Lpd',
         authMode: 'iam4a',
         baseUrl: 'https://llmhub-u.cscec.com/agent-build-v3',
-        systemVariables: {
-            // user_id: 'YOU CAN DEFINE USER ID HERE',
-            // conversation_id: 'YOU CAN DEFINE CONVERSATION ID HERE, IT MUST BE A VALID UUID',
+        // 可选：视觉自定义
+        containerProps: {
+            style: {
+                right: '20px',
+                bottom: '20px'
+            },
+            className: 'custom-chat-button'
         },
+
+        // 可选：交互行为
+        draggable: true, // 允许用户拖动按钮
+        dragAxis: 'both', // 'x'、'y' 或 'both'
+
+        // 可选：预填充用户上下文
+        inputs: {
+            name: 'Messi', // 来自你的 Dify 应用的变量名
+            department: 'Support'
+        },
+
+        // 可选：用于追踪的系统变量
+        systemVariables: {
+            user_id: '1234567890',
+            conversation_id: '1234567890'
+        },
+
+        // 可选：用户个人资料信息
         userVariables: {
-            // avatar_url: 'YOU CAN DEFINE USER AVATAR URL HERE',
-            // name: 'YOU CAN DEFINE USER NAME HERE',
+            avatar_url: 'https://img2.baidu.com/it/u=1070413851,1678749001&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=546',
+            name: 'Messi'
         }
     };
 </script>
