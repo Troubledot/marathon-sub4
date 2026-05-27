@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>测试环境 · script 嵌入</title>
+        <style>
+            body {
+                margin: 0;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: #111;
+                color: #fff;
+                padding: 16px;
+            }
+
+            .tip {
+                color: #ffd37a;
+                margin-bottom: 12px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>测试环境 · script 嵌入</h1>
+        <div class="tip">如测试环境 token 或 baseUrl 不同，请修改下方配置。</div>
+
+        <script>
+            // TODO: 按测试环境实际值替换
+            const token = 'j44d3EuTfWaj4Lpd';
+            const baseUrl = 'https://llmhub-u.cscec.com/agent-build-v3';
+
+            window.difyChatbotConfig = {
+                token,
+                authMode: 'iam4a',
+                baseUrl,
+                containerProps: {
+                    style: {
+                        right: '24px',
+                        bottom: '24px'
+                    },
+                    className: 'custom-chat-button'
+                },
+                draggable: true,
+                dragAxis: 'both'
+            };
+
+            const embedScript = document.createElement('script');
+            embedScript.src = `${baseUrl}/embed.min.js`;
+            embedScript.id = token;
+            embedScript.defer = true;
+            document.body.appendChild(embedScript);
+        </script>
+    </body>
+</html>
