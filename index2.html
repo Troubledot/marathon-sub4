@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Dify 嵌入示例导航</title>
+        <style>
+            body {
+                margin: 0;
+                min-height: 100vh;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                background: #0f1115;
+                color: #f5f7fa;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 24px;
+            }
+
+            .container {
+                width: 100%;
+                max-width: 760px;
+                background: #171a21;
+                border: 1px solid #2a2f3a;
+                border-radius: 12px;
+                padding: 24px;
+            }
+
+            h1 {
+                margin: 0 0 8px;
+                font-size: 1.5rem;
+            }
+
+            p {
+                margin: 0 0 20px;
+                color: #a7b1c2;
+            }
+
+            .grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+                gap: 12px;
+            }
+
+            a {
+                display: block;
+                padding: 14px 12px;
+                border-radius: 10px;
+                text-decoration: none;
+                color: #f5f7fa;
+                background: #202531;
+                border: 1px solid #313949;
+                transition: all 0.2s ease;
+                font-weight: 600;
+            }
+
+            a:hover {
+                background: #2a3243;
+                border-color: #4d5f87;
+                transform: translateY(-1px);
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>嵌入页面导航</h1>
+            <p>以下是正式环境与测试环境的 iframe/script 两种嵌入示例。</p>
+            <div class="grid">
+                <a href="./prod-iframe.html">正式环境 · iframe 形式</a>
+                <a href="./prod-script.html">正式环境 · script 形式</a>
+                <a href="./test-iframe.html">测试环境 · iframe 形式</a>
+                <a href="./test-script.html">测试环境 · script 形式</a>
+            </div>
+        </div>
+    </body>
+</html>
